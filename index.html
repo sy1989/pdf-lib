@@ -1,21 +1,26 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>PDF-Lib Demo</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <meta charset="UTF-8">
+  <title>PDF-Lib 示例</title>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
 </head>
 <body>
-    <script>
-        async function createPDF() {
-            const { PDFDocument, rgb } = PDFLib;
-            const pdfDoc = await PDFDocument.create();
-            const page = pdfDoc.addPage([600, 400]);
-            page.drawText('Hello, GitHub Pages!', { x: 50, y: 350, size: 30 });
-            const pdfBytes = await pdfDoc.save();
-            // 下载或显示PDF
-        }
-        createPDF();
-    </script>
+  <h1>PDF-Lib 示例</h1>
+  <button id="generate">生成 PDF</button>
+  <script>
+    document.getElementById('generate').addEventListener('click', async () => {
+      const { PDFDocument } = PDFLib;
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([600, 400]);
+      const { width, height } = page.getSize();
+      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const text = 'Hello, PDF-Lib!';
+      page.drawText(text, { x: width / 2 - font.widthOfTextAtSize(text, 24) / 2, y: height / 2, size: 24, font });
+      const pdfBytes = await pdfDoc.save();
+      const pdfUrl = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
+      window.open(pdfUrl);
+    });
+  </script>
 </body>
 </html>
