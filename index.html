@@ -46,11 +46,11 @@
       const arrayBuffer = await file.arrayBuffer();
       pdfDoc = await PDFDocument.load(arrayBuffer);
     });
-
+   
     // 拆分 PDF
     document.getElementById('split-btn').addEventListener('click', async () => {
       if (!pdfDoc) return alert('请先加载一个 PDF 文件');
-
+      clearPreviousDownloadLinks();
       const pages = pdfDoc.getPages();
       const splitPdfs = [];
       
@@ -78,7 +78,7 @@
     // 提取特定页面
     document.getElementById('extract-btn').addEventListener('click', async () => {
       if (!pdfDoc) return alert('请先加载一个 PDF 文件');
-
+      clearPreviousDownloadLinks();
       const pageInput = document.getElementById('extract-pages').value;
       const pagesToExtract = parsePageRange(pageInput);
       
@@ -147,6 +147,11 @@
       }
 
       return pages;
+    }
+    //清除下载链接的函数
+    function clearPreviousDownloadLinks() {
+      const previousLinks = document.querySelectorAll('.download-link');
+      previousLinks.forEach(link => link.remove());
     }
   </script>
 </body>
