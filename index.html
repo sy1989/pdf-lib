@@ -2,33 +2,34 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>PDF 编辑器</title>
+  <title>PDF 拆分与合并工具</title>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body>
-  <h1>PDF 编辑器</h1>
+  <h1>PDF 拆分与合并工具</h1>
 
-  <!-- 文件上传 -->
+  <!-- 上传 PDF -->
+  <h3>上传 PDF 文件</h3>
   <input type="file" id="file-input" accept="application/pdf" />
   <button id="load-btn">加载 PDF</button>
-  <br />
+  <br /><br />
 
-  <!-- 编辑区域 -->
-  <button id="add-text-btn">添加文本</button>
-  <button id="add-image-btn">添加图片</button>
-  <button id="fill-form-btn">填写表单</button>
-  <br />
+  <!-- 拆分 PDF -->
+  <h3>拆分 PDF</h3>
+  <button id="split-btn">拆分为单页 PDF</button>
+  <br /><br />
 
   <!-- 合并 PDF -->
+  <h3>合并多个 PDF</h3>
   <input type="file" id="merge-input" accept="application/pdf" multiple />
   <button id="merge-btn">合并 PDF</button>
-  <br />
+  <br /><br />
 
   <!-- 下载链接 -->
   <a id="download-link" style="display:none" download="output.pdf">下载 PDF</a>
 
   <script>
-    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+    const { PDFDocument } = PDFLib;
     let pdfDoc;
 
     // 加载 PDF 文件
@@ -41,64 +42,38 @@
       alert('PDF 加载成功');
     });
 
-    // 添加文本
-    document.getElementById('add-text-btn').addEventListener('click', async () => {
+    // 拆分 PDF
+    document.getElementById('split-btn').addEventListener('click', async () => {
       if (!pdfDoc) return alert('请先加载一个 PDF 文件');
 
-      const page = pdfDoc.getPages()[0];
-      const { width, height } = page.getSize();
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const text = '你好，PDF-Lib！';
-      const fontSize = 24;
-      page.drawText(text, {
-        x: width / 2 - font.widthOfTextAtSize(text, fontSize) / 2,
-        y: height - 100,
-        size: fontSize,
-        font,
-        color: rgb(0, 0, 0),
+      const pages = pdfDoc.getPages();
+      const splitPdfs = [];
+      
+      for (let i = 0; i < pages.length; i++) {
+        const newPdf = await PDFDocument.create();
+        const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
+        newPdf.addPage(copiedPage);
+        const pdfBytes = await newPdf.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        splitPdfs.push(url);
+      }
+
+      // 提供下载链接
+      splitPdfs.forEach((url, index) => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `split_page_${index + 1}.pdf`;
+        a.textContent = `下载第 ${index + 1} 页`;
+        document.body.appendChild(a);
+        document.body.appendChild(document.createElement('br'));
       });
-
-      alert('文本添加成功');
-    });
-
-    // 添加图片
-    document.getElementById('add-image-btn').addEventListener('click', async () => {
-      if (!pdfDoc) return alert('请先加载一个 PDF 文件');
-
-      const url = 'https://example.com/image.png'; // 替换为实际图片 URL
-      const imageBytes = await fetch(url).then(res => res.arrayBuffer());
-      const image = await pdfDoc.embedPng(imageBytes);
-      const page = pdfDoc.getPages()[0];
-      const { width, height } = page.getSize();
-      const imageWidth = 100;
-      const imageHeight = (image.height / image.width) * imageWidth;
-      page.drawImage(image, {
-        x: width / 2 - imageWidth / 2,
-        y: height / 2 - imageHeight / 2,
-        width: imageWidth,
-        height: imageHeight,
-      });
-
-      alert('图片添加成功');
-    });
-
-    // 填写表单
-    document.getElementById('fill-form-btn').addEventListener('click', async () => {
-      if (!pdfDoc) return alert('请先加载一个 PDF 文件');
-
-      const form = pdfDoc.getForm();
-      const textField = form.getTextField('name');
-      textField.setText('张三');
-      const checkbox = form.getCheckBox('subscribe');
-      checkbox.check();
-
-      alert('表单填写成功');
     });
 
     // 合并 PDF 文件
     document.getElementById('merge-btn').addEventListener('click', async () => {
       const files = document.getElementById('merge-input').files;
-      if (files.length < 2) return alert('请至少选择两个 PDF 文件');
+      if (files.length < 2) return alert('请至少选择两个 PDF 文件进行合并');
 
       const mergedPdf = await PDFDocument.create();
       for (const file of files) {
