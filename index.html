@@ -70,6 +70,7 @@
         a.href = url;
         a.download = `split_page_${index + 1}.pdf`;
         a.textContent = `下载第 ${index + 1} 页`;
+        a.className = 'download-link'; // 添加类名
         document.body.appendChild(a);
         document.body.appendChild(document.createElement('br'));
       });
@@ -102,6 +103,7 @@
       a.href = url;
       a.download = 'extracted_pages.pdf';
       a.textContent = '下载提取的页面';
+      a.className = 'download-link'; // 添加类名
       document.body.appendChild(a);
       document.body.appendChild(document.createElement('br'));
     });
