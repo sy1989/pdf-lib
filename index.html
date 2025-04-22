@@ -2,41 +2,115 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>PDF 合并工具</title>
-  <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+  <title>PDF 编辑器</title>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body>
-  <h1>将多个 PDF 合并为一个</h1>
-  <input type="file" id="file-input" multiple accept="application/pdf" />
+  <h1>PDF 编辑器</h1>
+
+  <!-- 文件上传 -->
+  <input type="file" id="file-input" accept="application/pdf" />
+  <button id="load-btn">加载 PDF</button>
+  <br />
+
+  <!-- 编辑区域 -->
+  <button id="add-text-btn">添加文本</button>
+  <button id="add-image-btn">添加图片</button>
+  <button id="fill-form-btn">填写表单</button>
+  <br />
+
+  <!-- 合并 PDF -->
+  <input type="file" id="merge-input" accept="application/pdf" multiple />
   <button id="merge-btn">合并 PDF</button>
   <br />
-  <a id="download-link" style="display:none" download="merged.pdf">下载合并后的 PDF</a>
+
+  <!-- 下载链接 -->
+  <a id="download-link" style="display:none" download="output.pdf">下载 PDF</a>
 
   <script>
-    document.getElementById('merge-btn').addEventListener('click', async () => {
-      const files = document.getElementById('file-input').files;
-      if (files.length < 2) {
-        alert('请至少选择两个 PDF 文件进行合并');
-        return;
-      }
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+    let pdfDoc;
 
-      const pdfDocs = [];
+    // 加载 PDF 文件
+    document.getElementById('load-btn').addEventListener('click', async () => {
+      const file = document.getElementById('file-input').files[0];
+      if (!file) return alert('请先选择一个 PDF 文件');
+
+      const arrayBuffer = await file.arrayBuffer();
+      pdfDoc = await PDFDocument.load(arrayBuffer);
+      alert('PDF 加载成功');
+    });
+
+    // 添加文本
+    document.getElementById('add-text-btn').addEventListener('click', async () => {
+      if (!pdfDoc) return alert('请先加载一个 PDF 文件');
+
+      const page = pdfDoc.getPages()[0];
+      const { width, height } = page.getSize();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const text = '你好，PDF-Lib！';
+      const fontSize = 24;
+      page.drawText(text, {
+        x: width / 2 - font.widthOfTextAtSize(text, fontSize) / 2,
+        y: height - 100,
+        size: fontSize,
+        font,
+        color: rgb(0, 0, 0),
+      });
+
+      alert('文本添加成功');
+    });
+
+    // 添加图片
+    document.getElementById('add-image-btn').addEventListener('click', async () => {
+      if (!pdfDoc) return alert('请先加载一个 PDF 文件');
+
+      const url = 'https://example.com/image.png'; // 替换为实际图片 URL
+      const imageBytes = await fetch(url).then(res => res.arrayBuffer());
+      const image = await pdfDoc.embedPng(imageBytes);
+      const page = pdfDoc.getPages()[0];
+      const { width, height } = page.getSize();
+      const imageWidth = 100;
+      const imageHeight = (image.height / image.width) * imageWidth;
+      page.drawImage(image, {
+        x: width / 2 - imageWidth / 2,
+        y: height / 2 - imageHeight / 2,
+        width: imageWidth,
+        height: imageHeight,
+      });
+
+      alert('图片添加成功');
+    });
+
+    // 填写表单
+    document.getElementById('fill-form-btn').addEventListener('click', async () => {
+      if (!pdfDoc) return alert('请先加载一个 PDF 文件');
+
+      const form = pdfDoc.getForm();
+      const textField = form.getTextField('name');
+      textField.setText('张三');
+      const checkbox = form.getCheckBox('subscribe');
+      checkbox.check();
+
+      alert('表单填写成功');
+    });
+
+    // 合并 PDF 文件
+    document.getElementById('merge-btn').addEventListener('click', async () => {
+      const files = document.getElementById('merge-input').files;
+      if (files.length < 2) return alert('请至少选择两个 PDF 文件');
+
+      const mergedPdf = await PDFDocument.create();
       for (const file of files) {
         const arrayBuffer = await file.arrayBuffer();
-        const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-        pdfDocs.push(pdfDoc);
-      }
-
-      const mergedPdf = await PDFLib.PDFDocument.create();
-      for (const pdfDoc of pdfDocs) {
-        const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+        const pdf = await PDFDocument.load(arrayBuffer);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
         copiedPages.forEach(page => mergedPdf.addPage(page));
       }
 
       const mergedPdfBytes = await mergedPdf.save();
       const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
       const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob);
-
       const downloadLink = document.getElementById('download-link');
       downloadLink.href = mergedPdfUrl;
       downloadLink.style.display = 'inline';
