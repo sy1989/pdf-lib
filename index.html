@@ -14,6 +14,10 @@
   <button id="load-btn">加载 PDF</button>
   <br /><br />
 
+  <!-- 显示文件名 -->
+  <div id="file-name-display"></div>
+  <br />
+
   <!-- 拆分 PDF -->
   <h3>拆分 PDF</h3>
   <button id="split-btn">拆分为单页 PDF</button>
@@ -37,8 +41,16 @@
       const file = document.getElementById('file-input').files[0];
       if (!file) return alert('请先选择一个 PDF 文件');
 
+      // 清除之前加载的文件名显示
+      document.getElementById('file-name-display').textContent = '';
+
       const arrayBuffer = await file.arrayBuffer();
       pdfDoc = await PDFDocument.load(arrayBuffer);
+
+      // 显示当前加载的 PDF 文件名
+      const fileName = file.name;
+      document.getElementById('file-name-display').textContent = `已加载 PDF: ${fileName}`;
+
       alert('PDF 加载成功');
     });
 
