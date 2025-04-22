@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF 拆分与合并工具</title>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    .thumbnail-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .thumbnail {
+      width: 100px;
+      height: 150px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .selected {
+      border: 2px solid red;
+    }
+  </style>
+</head>
+<body>
+  <h1>PDF 拆分与合并工具</h1>
+
+  <!-- 上传 PDF -->
+  <input type="file" id="file-input" accept="application/pdf" />
+  <br /><br />
+
+  <!-- 显示 PDF 页面缩略图 -->
+  <div id="thumbnails" class="thumbnail-container"></div>
+  <br />
+
+  <!-- 提取页面 -->
+  <h3>提取特定页面</h3>
+  <button id="extract-btn">提取选中的页面</button>
+  <br /><br />
+
+  <!-- 合并 PDF -->
+  <h3>合并多个 PDF</h3>
+  <input type="file" id="merge-input" accept="application/pdf" multiple />
+  <button id="merge-btn">合并 PDF</button>
+  <br /><br />
+
+  <!-- 下载链接 -->
+  <a id="download-link" style="display:none" download="output.pdf">下载 PDF</a>
+
+  <script>
+    const { PDFDocument } = PDFLib;
+    let pdfDoc;
+    let selectedPages = [];
+
+    // 自动触发文件选择框
+    document.getElementById('file-input').addEventListener('change', async () => {
+      const file = document.getElementById('file-input').files[0];
+      if (!file) return alert('请先选择一个 PDF 文件');
+
+      // 加载 PDF 文件
+      const arrayBuffer = await file.arrayBuffer();
+      pdfDoc = await PDFDocument.load(arrayBuffer);
+
+      // 清空之前的缩略图
+      document.getElementById('thumbnails').innerHTML = '';
+
+      // 显示 PDF 页面缩略图
+      const pages = pdfDoc.getPages();
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+        const { width, height } = page.getSize();
+        const scale = 0.2; // 缩略图比例
+        const scaledWidth = width * scale;
+        const scaledHeight = height * scale;
+
+        // 创建一个 canvas 来渲染页面内容
+        const canvas = document.createElement('canvas');
+        canvas.width = scaledWidth;
+        canvas.height = scaledHeight;
+        const ctx = canvas.getContext('2d');
+        
+        // 将页面内容绘制到 canvas 上
+        const imageBytes = await pdfDoc.saveAsBase64({ dataUri: true });
+        const img = new Image();
+        img.src = imageBytes;
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+        };
+        
+        // 将缩略图添加到页面
+        const thumbnail = document.createElement('img');
+        thumbnail.src = canvas.toDataURL();
+        thumbnail.className = 'thumbnail';
+        thumbnail.dataset.pageIndex = i;
+        
+        // 点击缩略图来选择或取消选择页面
+        thumbnail.addEventListener('click', () => {
+          const pageIndex = parseInt(thumbnail.dataset.pageIndex);
+          if (selectedPages.includes(pageIndex)) {
+            selectedPages = selectedPages.filter(index => index !== pageIndex);
+            thumbnail.classList.remove('selected');
+          } else {
+            selectedPages.push(pageIndex);
+            thumbnail.classList.add('selected');
+          }
+        });
+
+        document.getElementById('thumbnails').appendChild(thumbnail);
+      }
+    });
+
+    // 提取选中的页面
+    document.getElementById('extract-btn').addEventListener('click', async () => {
+      if (!pdfDoc) return alert('请先加载一个 PDF 文件');
+      if (selectedPages.length === 0) return alert('请至少选择一页');
+
+      const newPdf = await PDFDocument.create();
+
+      // 将选中的页面复制到新文档
+      for (const pageIndex of selectedPages) {
+        const [copiedPage] = await newPdf.copyPages(pdfDoc, [pageIndex]);
+        newPdf.addPage(copiedPage);
+      }
+
+      const pdfBytes = await newPdf.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'extracted_pages.pdf';
+      a.textContent = '下载提取的页面';
+      document.body.appendChild(a);
+      document.body.appendChild(document.createElement('br'));
+    });
+
+    // 合并 PDF 文件
+    document.getElementById('merge-btn').addEventListener('click', async () => {
+      const files = document.getElementById('merge-input').files;
+      if (files.length < 2) return alert('请至少选择两个 PDF 文件进行合并');
+
+      const mergedPdf = await PDFDocument.create();
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await PDFDocument.load(arrayBuffer);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach(page => mergedPdf.addPage(page));
+      }
+
+      const mergedPdfBytes = await mergedPdf.save();
+      const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob);
+      const downloadLink = document.getElementById('download-link');
+      downloadLink.href = mergedPdfUrl;
+      downloadLink.style.display = 'inline';
+    });
+  </script>
+</body>
+</html>
