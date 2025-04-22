@@ -72,6 +72,8 @@
         a.textContent = `下载第 ${index + 1} 页`;
         a.className = 'download-link'; // 添加类名
         document.body.appendChild(a);
+        const br = document.createElement('br');
+        br.className = 'download-br';
         document.body.appendChild(document.createElement('br'));
       });
     });
@@ -105,6 +107,8 @@
       a.textContent = '下载提取的页面';
       a.className = 'download-link'; // 添加类名
       document.body.appendChild(a);
+      const br = document.createElement('br');
+      br.className = 'download-br';
       document.body.appendChild(document.createElement('br'));
     });
 
@@ -154,6 +158,8 @@
     function clearPreviousDownloadLinks() {
       const previousLinks = document.querySelectorAll('.download-link');
       previousLinks.forEach(link => link.remove());
+      const brElements = document.querySelectorAll('.download-br');
+      brElements.forEach(br => br.remove());
     }
   </script>
 </body>
