@@ -3,23 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>PDF 拆分与合并工具</title>
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body>
   <h1>PDF 拆分与合并工具</h1>
 
   <!-- 上传 PDF -->
-  <h3>上传 PDF 文件</h3>
   <input type="file" id="file-input" accept="application/pdf" />
-  <button id="load-btn">加载 PDF</button>
   <br /><br />
-
-  <!-- 显示文件名 -->
-  <div id="file-name-display"></div>
-  <br />
 
   <!-- 拆分 PDF -->
   <h3>拆分 PDF</h3>
@@ -39,31 +30,14 @@
     const { PDFDocument } = PDFLib;
     let pdfDoc;
 
-    // 清除之前的状态
-    window.onload = function() {
-      // 清空显示区域
-      document.getElementById('file-name-display').textContent = '';
-      // 清空文件输入
-      document.getElementById('file-input').value = '';
-      document.getElementById('merge-input').value = '';
-    };
-
-    // 加载 PDF 文件
-    document.getElementById('load-btn').addEventListener('click', async () => {
+    // 自动触发文件选择框
+    document.getElementById('file-input').addEventListener('change', async () => {
       const file = document.getElementById('file-input').files[0];
       if (!file) return alert('请先选择一个 PDF 文件');
 
-      // 清除之前加载的文件名显示
-      document.getElementById('file-name-display').textContent = '';
-
+      // 加载 PDF 文件
       const arrayBuffer = await file.arrayBuffer();
       pdfDoc = await PDFDocument.load(arrayBuffer);
-
-      // 显示当前加载的 PDF 文件名
-      const fileName = file.name;
-      document.getElementById('file-name-display').textContent = `已加载 PDF: ${fileName}`;
-
-      alert('PDF 加载成功');
     });
 
     // 拆分 PDF
