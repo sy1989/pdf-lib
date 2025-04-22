@@ -1,0 +1,21 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF-Lib Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+</head>
+<body>
+    <script>
+        async function createPDF() {
+            const { PDFDocument, rgb } = PDFLib;
+            const pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage([600, 400]);
+            page.drawText('Hello, GitHub Pages!', { x: 50, y: 350, size: 30 });
+            const pdfBytes = await pdfDoc.save();
+            // 下载或显示PDF
+        }
+        createPDF();
+    </script>
+</body>
+</html>
