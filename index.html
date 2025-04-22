@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>PDF 拆分与合并工具</title>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body>
@@ -35,6 +38,15 @@
   <script>
     const { PDFDocument } = PDFLib;
     let pdfDoc;
+
+    // 清除之前的状态
+    window.onload = function() {
+      // 清空显示区域
+      document.getElementById('file-name-display').textContent = '';
+      // 清空文件输入
+      document.getElementById('file-input').value = '';
+      document.getElementById('merge-input').value = '';
+    };
 
     // 加载 PDF 文件
     document.getElementById('load-btn').addEventListener('click', async () => {
