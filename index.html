@@ -2,24 +2,44 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>PDF-Lib 示例</title>
+  <title>PDF 合并工具</title>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
 </head>
 <body>
-  <h1>PDF-Lib 示例</h1>
-  <button id="generate">生成 PDF</button>
+  <h1>将多个 PDF 合并为一个</h1>
+  <input type="file" id="file-input" multiple accept="application/pdf" />
+  <button id="merge-btn">合并 PDF</button>
+  <br />
+  <a id="download-link" style="display:none" download="merged.pdf">下载合并后的 PDF</a>
+
   <script>
-    document.getElementById('generate').addEventListener('click', async () => {
-      const { PDFDocument } = PDFLib;
-      const pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([600, 400]);
-      const { width, height } = page.getSize();
-      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-      const text = 'Hello, PDF-Lib!';
-      page.drawText(text, { x: width / 2 - font.widthOfTextAtSize(text, 24) / 2, y: height / 2, size: 24, font });
-      const pdfBytes = await pdfDoc.save();
-      const pdfUrl = URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
-      window.open(pdfUrl);
+    document.getElementById('merge-btn').addEventListener('click', async () => {
+      const files = document.getElementById('file-input').files;
+      if (files.length < 2) {
+        alert('请至少选择两个 PDF 文件进行合并');
+        return;
+      }
+
+      const pdfDocs = [];
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        pdfDocs.push(pdfDoc);
+      }
+
+      const mergedPdf = await PDFLib.PDFDocument.create();
+      for (const pdfDoc of pdfDocs) {
+        const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+        copiedPages.forEach(page => mergedPdf.addPage(page));
+      }
+
+      const mergedPdfBytes = await mergedPdf.save();
+      const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob);
+
+      const downloadLink = document.getElementById('download-link');
+      downloadLink.href = mergedPdfUrl;
+      downloadLink.style.display = 'inline';
     });
   </script>
 </body>
