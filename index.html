@@ -129,6 +129,10 @@
       const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
       const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob);
       const downloadLink = document.getElementById('download-link');
+      if (downloadLink.href && downloadLink.href.startsWith('blob:')) {
+        URL.revokeObjectURL(downloadLink.href);
+        downloadLink.style.display = 'none';
+      }
       downloadLink.href = mergedPdfUrl;
       downloadLink.style.display = 'inline';
     });
@@ -157,7 +161,13 @@
     //清除下载链接的函数
     function clearPreviousDownloadLinks() {
       const previousLinks = document.querySelectorAll('.download-link');
-      previousLinks.forEach(link => link.remove());
+      previousLinks.forEach(link => {
+      // 撤销对象 URL
+        if (link.href.startsWith('blob:')) {
+          URL.revokeObjectURL(link.href);
+        }
+        link.remove();
+      });
       const brElements = document.querySelectorAll('.download-br');
       brElements.forEach(br => br.remove());
     }
