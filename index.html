@@ -136,7 +136,7 @@
     // 解析页面范围输入
     function parsePageRange(input) {
       const pages = [];
-      const ranges = input.split(',').map(range => range.trim());
+      const ranges = input.split(/[,，]/).map(range => range.trim());
 
       for (const range of ranges) {
         const [start, end] = range.split('-').map(num => parseInt(num.trim(), 10));
